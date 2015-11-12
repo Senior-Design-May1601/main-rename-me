@@ -6,7 +6,7 @@ import (
 
 // TODO: actually setup a Service interface
 func cmdHoneypot struct {
-    service projectmain.Honeypot
+    honeypot projectmain.Honeypot
 }
 
 func (c *cmdHoneypot) Start() error {

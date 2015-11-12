@@ -17,7 +17,7 @@ type HoneypotServer struct {
 }
 
 func (h *honeypot) Start() error {
-    err := h.clent.Call("Honeypot.Start", ...)
+    err := h.client.Call("Honeypot.Start", ...)
     if err != nil {
         panic("Error: " + err.Error())
     }
@@ -26,7 +26,7 @@ func (h *honeypot) Start() error {
 }
 
 func (h *honeypot) Stop() error {
-    err := h.clent.Call("Honeypot.Stop", ...)
+    err := h.client.Call("Honeypot.Stop", ...)
     if err != nil {
         panic("Error: " + err.Error())
     }
@@ -35,7 +35,7 @@ func (h *honeypot) Stop() error {
 }
 
 func (h *honeypot) Restart() error {
-    err := h.clent.Call("Honeypot.Restart", ...)
+    err := h.client.Call("Honeypot.Restart", ...)
     if err != nil {
         panic("Error: " + err.Error())
     }
