@@ -1,18 +1,22 @@
 package main
 
 import(
-"net/rpc"
-"log"
-"net"
-"net/http"
-"fmt"
+	"net/rpc"
+	"log"
+	"net"
+	"net/http"
+	"fmt"
+	"encoding/gob"
+	"../plugin/"
 )
 
-type RpcServer int
+type RpcServer struct{
+
+}
 var port int
-func (t *RpcServer) RegisterType(args interface{}, reply *int) error{
-	rpc.Register(args)
-	
+
+func (t *RpcServer) RegisterType(args plugin.HoneyPot, reply *int) error{
+	rpc.Register(args.Instance)
 	address:= fmt.Sprintf("127.0.0.1:%d",port)
 	l, e := net.Listen("tcp",address)
 	if e != nil{
@@ -27,8 +31,9 @@ func (t *RpcServer) RegisterType(args interface{}, reply *int) error{
 
 
 func main(){
-	arith := new(RpcServer)
-	rpc.Register(arith)
+	Server := new(RpcServer)
+	rpc.Register(Server)
+	gob.Register(plugin.Arith{})
 	rpc.HandleHTTP()
 	l, e := net.Listen("tcp","127.0.0.1:1234")
 	if e != nil{
@@ -36,5 +41,4 @@ func main(){
 	}
 	port = 1235
         http.Serve(l,nil)
-
 }

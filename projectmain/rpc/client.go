@@ -1,8 +1,8 @@
 package main
 import("net/rpc"
 	"log"
+	"encoding/gob"
 	"bytes"
-	"encoding/gob"	
 )
 
 type Args struct{
@@ -11,9 +11,11 @@ type Args struct{
 type Client struct{
 	conn *rpc.Client
 }
-type Arith int
-
-func (t *Arith) Multiply(args *Args, reply *int) error{
+type Arith struct{}
+type Walker interface{
+	Multiply(args *Args, reply *int) error
+}
+func (t Arith) Multiply(args *Args, reply *int) error{
 	*reply = args.A * args.B
 	return nil
 }
@@ -21,23 +23,29 @@ func (t *Arith) Multiply(args *Args, reply *int) error{
 
 func main(){
 	var reply int
-	var buf []byte
-	b:= bytes.NewBuffer(buf)
-	enc := gob.NewEncoder(b)
-	err := enc.Encode(new(Arith))
-
-	if err != nil{
-		log.Fatal("Encoding",err)
+	gob.Register(Arith{})
+	arith := Arith{}
+	var b bytes.Buffer
+	var w Walker = arith
+	e:= gob.NewEncoder(&b)
+	
+	if err:= e.Encode(&w); err != nil{
+		panic(err)
 	}
+	
+//	jArith,err := json.Marshal(arith);
+/*	if err != nil{
+		log.Fatal("Encoding",err)
+	}*/
 
 	client, err := rpc.DialHTTP("tcp","127.0.0.1:1234")
 	if err != nil{
 		log.Fatal("dialing:",err)
 	}
 	
-	err = client.Call("RpcServer.RegisterType",b.Bytes(),&reply)
+	err = client.Call("RpcServer.RegisterMe",b,&reply)
 	if err != nil{
-		log.Fatal("arith err:",err)
+		log.Fatal("call err:",err)
 	}
 	
 
