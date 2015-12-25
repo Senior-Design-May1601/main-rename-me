@@ -1,45 +1,42 @@
 package main 
 
 import (
+	"net/http"
 	"net/rpc"
 	"log"
-	"fmt"
 	"net"
+	"../plugin/"
+	"encoding/gob"	
+	"fmt"
+
 )
-
-var port int;
-
-
-type Server struct{
-	server *rpc.Server
-}
-
-func NewServer() (*Server){
-	return &Server{server: rpc.NewServer()}	
-}
-
-func (s *Server) Register(rcvr interface{},reply *int) error{
-	fmt.Printf("I'm through the rabbit hole\n")
-	s.server.Register(rcvr)
-	address := fmt.Sprintf("127.0.0.1:%d",port)
-	l,e := net.Listen("tcp",address)
-	if e != nil{
-		log.Fatal("listen error:",e)
-	}
-	fmt.Printf("listening on %d",port)
-	go s.server.Accept(l)
-	port++
-	return nil 
-}
 func main(){
-	s:=NewServer()
-	s.server.Register(s)
-	s.server.HandleHTTP("/_goRPC_","/debug/rpc")
-	l, e := net.Listen("tcp","127.0.0.1:1234")
+	rpc.Register(&Handler{8081})
+	rpc.HandleHTTP()
+	gob.RegisterName("HoneyPot",new(plugin.Honeypot))
+        gob.RegisterName("Arith",new(plugin.Arith))
+
+	l, e:= net.Listen("tcp",":8080")
 	if e != nil{
-		log.Fatal("listen error:",e)
+		log.Fatal("Listen error:", e)
 	}
-	port = 1235
-        s.server.Accept(l)
+	http.Serve(l,nil)
 }
+
+type Handler struct{
+	port int
+}
+func (t *Handler) RegisterType(args plugin.Honeypot,reply *int) error{
+	rpc.Register(args)
+	port := fmt.Sprintf(":%d",t.port)
+	*reply = t.port
+	t.port++
+	l, e:= net.Listen("tcp",port)
+	if e != nil{
+		log.Fatal("Listen error:", e)
+	}
+	go http.Serve(l,nil)
+	return nil
+}
+
 
