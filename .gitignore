@@ -22,3 +22,8 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+# executable
+projectmain
+# my config
+dev-config.toml
