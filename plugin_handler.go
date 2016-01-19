@@ -17,13 +17,13 @@ type clientMap struct {
 }
 
 type PluginManager struct {
+    callChan chan *rpc.Call
     clients clientMap
     listener net.Listener
     wg *sync.WaitGroup
 }
 
 func (x *PluginManager) Ready(port int, _ *struct{}) error {
-    log.Println("Plugin ready on port", port)
     go x.connectAndStart(port)
     log.Println("Starting plugin on port", port)
     return nil
@@ -34,13 +34,13 @@ func (x *PluginManager) connectAndStart(port int) error {
     if err != nil {
         return err
     }
-    x.clients.RLock()
     var reply plugin.Reply
-    // TODO: don't block here
-    err = x.clients.values[port].Call("Plugin.Start", &plugin.Args{}, &reply)
-    if err != nil {
-        log.Fatal("error:", err)
-    }
+    x.clients.RLock()
+    x.clients.values[port].Go(
+        "Plugin.Start",
+        &plugin.Args{},
+        &reply,
+        x.callChan)
     x.clients.RUnlock()
     return nil
 }
@@ -58,8 +58,20 @@ func (x *PluginManager) connect(port int) error {
     return nil
 }
 
+func (x *PluginManager) handleCallReplies() {
+    for call := range x.callChan {
+        if call.Error != nil {
+            log.Fatal("Error from client: ", call.Error)
+        } else {
+            // TODO: log port here
+            log.Println("Client start: OK.")
+        }
+    }
+}
+
 func NewPluginManager(wg *sync.WaitGroup) *PluginManager {
     manager := &PluginManager{
+        callChan: make(chan *rpc.Call, 100),
         clients: clientMap{
             values: make(map[int]*rpc.Client),
         },
@@ -76,6 +88,7 @@ func NewPluginManager(wg *sync.WaitGroup) *PluginManager {
     }
     (*manager).listener = l
     go http.Serve(l, nil)
+    go (*manager).handleCallReplies()
 
     return manager
 }
