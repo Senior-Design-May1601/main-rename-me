@@ -8,9 +8,10 @@ import (
     "github.com/BurntSushi/toml"
 )
 
+const CONTROL_PORT = "localhost:10100"
+
 type pluginConfig struct {
     Path string
-    Port int
 }
 
 type PluginConfigs struct {

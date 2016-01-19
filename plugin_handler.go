@@ -37,7 +37,7 @@ func (x *PluginManager) connectAndStart(port int) error {
     x.clients.RLock()
     var reply plugin.Reply
     // TODO: don't block here
-    err = x.clients.values[port].Call("Plugin.Start", &plugin.Args{0}, &reply)
+    err = x.clients.values[port].Call("Plugin.Start", &plugin.Args{}, &reply)
     if err != nil {
         log.Fatal("error:", err)
     }
@@ -70,7 +70,7 @@ func NewPluginManager(wg *sync.WaitGroup) *PluginManager {
 
     rpc.Register(manager)
     rpc.HandleHTTP()
-    l, e := net.Listen("tcp", "localhost:1234")
+    l, e := net.Listen("tcp", CONTROL_PORT)
     if e != nil {
         log.Fatal("listen error:", e)
     }

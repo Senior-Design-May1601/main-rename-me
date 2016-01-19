@@ -1,10 +1,18 @@
 package plugin
 
 import (
+    "errors"
     "net"
     "net/http"
     "net/rpc"
     "strconv"
+)
+
+const (
+    CONTROL_PORT_MIN = 10000
+    CONTROL_PORT_MAX = 10099
+    // TODO: make this importable from projectmain
+    CORE_CONTROL_PORT = "localhost:10100"
 )
 
 type Server struct {
@@ -13,7 +21,7 @@ type Server struct {
 }
 
 func (x *Server) Serve() error {
-    client, err := rpc.DialHTTP("tcp", "localhost:1234")
+    client, err := rpc.DialHTTP("tcp", CORE_CONTROL_PORT)
     if err != nil {
         return err
     }
@@ -21,31 +29,36 @@ func (x *Server) Serve() error {
     return http.Serve(x.listener, nil)
 }
 
-func NewPlugin(plugin Plugin) (*Server, error) {
+func NewPluginServer(plugin Plugin) (*Server, error) {
     rpc.RegisterName("Plugin", plugin)
     rpc.HandleHTTP()
-    listener, err := net.Listen("tcp", "localhost:" + strconv.Itoa(plugin.Port()))
+    listener, port, err := getListener()
     if err != nil {
         return nil, err
     }
-    return &Server{plugin.Port(), listener}, nil
+    return &Server{port, listener}, nil
+}
+
+func getListener() (net.Listener, int, error) {
+    for port := CONTROL_PORT_MIN; port <= CONTROL_PORT_MAX; port++ {
+        l, e := net.Listen("tcp", "localhost:" + strconv.Itoa(port))
+        if e == nil {
+            return l, port, nil
+        }
+    }
+    return nil, 0, errors.New("No available control ports.")
 }
 
 type Plugin interface {
-    // RPC functions
     Start(args *Args, reply *Reply) error
     Stop(args *Args, reply *Reply) error
     Restart(args *Args, reply *Reply) error
-
-    // TODO: should these be RPC functions too?
-    Port() int
 }
 
 type Args struct {
-    Port int `json:"port"`
+    // TODO
 }
 
 type Reply struct {
-    Code int `json:"code"`
-    Msg string `json:"msg"`
+    // TODO
 }

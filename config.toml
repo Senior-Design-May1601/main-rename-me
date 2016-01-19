@@ -1,3 +1,2 @@
 [[pluginConfig]]
 path = "/full/path/to/plugin"
-management_port = 10000
