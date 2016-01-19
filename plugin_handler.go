@@ -1,6 +1,8 @@
 package main
 
 import (
+    "errors"
+    "fmt"
     "log"
     "net"
     "net/http"
@@ -45,16 +47,22 @@ func (x *PluginManager) connectAndStart(port int) error {
     return nil
 }
 
-// TODO: check that we don't have collisions in map?
 func (x *PluginManager) connect(port int) error {
     x.clients.Lock()
     defer x.clients.Unlock()
+
+    if _, ok := x.clients.values[port]; ok {
+        return errors.New(fmt.Sprintf("Port %d in use by another client.", port))
+    }
+
     client, err := rpc.DialHTTP("tcp", "localhost:" + strconv.Itoa(port))
     if err != nil {
         return err
     }
+
     x.clients.values[port] = client
     log.Println("Plugin started on port", port)
+
     return nil
 }
 

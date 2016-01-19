@@ -28,15 +28,13 @@ func main() {
     if _, err := toml.DecodeFile(*configPath, &configs); err != nil {
         log.Fatal(err)
     }
+
     var wg sync.WaitGroup
     pluginManager = NewPluginManager(&wg)
-    log.Println("Created plugin manager.")
-    // start plugin subprocesses
     err := startPlugins(configs)
     if err != nil {
         log.Fatal(err)
     }
-    log.Println("Plugin subprocesses started.")
     // TODO: something other than wait here?
     wg.Wait()
 }
