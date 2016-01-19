@@ -11,11 +11,6 @@ import (
     "github.com/Senior-Design-May1601/projectmain/plugin"
 )
 
-// need:
-//  - rpc server that plugin Serve() hits
-//  - track registered plugins
-//  - connection for each plugin
-
 type clientMap struct {
     sync.RWMutex
     values map[int]*rpc.Client
@@ -26,10 +21,6 @@ type PluginManager struct {
     listener net.Listener
     wg *sync.WaitGroup
 }
-
-// a plugin has called Serve() on port
-// this should trigger a client connection to the plugin and some
-// bookkeeping saving.
 
 func (x *PluginManager) Ready(port int, _ *struct{}) error {
     log.Println("Plugin ready on port", port)

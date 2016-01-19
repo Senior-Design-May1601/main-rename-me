@@ -7,9 +7,6 @@ import (
     "strconv"
 )
 
-// wrap a net.Listener and call internal callback to signal the plugin server
-// has actually started listening (i.e. we can talk to it). wrapping this
-// avoids a race condition
 type Server struct {
     Port int
     listener net.Listener
