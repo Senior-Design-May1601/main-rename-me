@@ -25,11 +25,15 @@ func (x *Server) Serve() error {
     if err != nil {
         return err
     }
+    // TODO: handle errors here somehow?
+    // TODO: possible race condition?
+    // TODO: handle plugin manager response
     client.Go("PluginManager.Ready", x.Port, struct{}{}, nil)
     return http.Serve(x.listener, nil)
 }
 
 func NewPluginServer(plugin Plugin) (*Server, error) {
+    // XXX can we handle having multiple "Plugin" names registered?
     rpc.RegisterName("Plugin", plugin)
     rpc.HandleHTTP()
     listener, port, err := getListener()
