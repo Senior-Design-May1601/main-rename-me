@@ -1,4 +1,4 @@
-package plugin
+package loggerplugin
 
 import (
     "errors"
@@ -7,41 +7,48 @@ import (
     "net/http"
     "net/rpc"
     "strconv"
-    "sync"
 
     "github.com/Senior-Design-May1601/projectmain/control"
 )
 
-type Server struct {
+type LoggerPluginServer struct {
     Port int
+    Name string
     listener net.Listener
     readyChan chan *rpc.Call
+    client *rpc.Client
 }
 
-func (x *Server) Serve() {
+type LoggerPlugin interface {
+    Log(msg []byte, _ *int) error
+}
+
+type ReadyArg struct {
+    Port int
+    Name string
+}
+
+func NewLoggerPlugin(logger LoggerPlugin) (*LoggerPluginServer, error) {
     client, err := rpc.DialHTTP("tcp", control.CONTROL_PORT_CORE)
     if err != nil {
-        log.Fatal(err)
+        return nil, err
     }
-    // TODO: do this better (wait groups feel weird here)
-    var wg sync.WaitGroup
-    wg.Add(1)
-    // Serve needs to run before the client connection to avoid race condition
-    go http.Serve(x.listener, nil)
-    go client.Go("PluginManager.Ready", x.Port, struct{}{}, x.readyChan)
-    wg.Wait()
-}
 
-func NewPluginServer(plugin Plugin) (*Server, error) {
-    // XXX can we actually handle having multiple "Plugin" names registered?
-    rpc.RegisterName("Plugin", plugin)
+    name := id()
+
+    rpc.RegisterName(name, logger)
     rpc.HandleHTTP()
     listener, port, err := getListener()
     if err != nil {
         return nil, err
     }
 
-    s := &Server{port, listener, make(chan *rpc.Call)}
+    s := &LoggerPluginServer{
+        Port: port,
+        Name: name,
+        listener: listener,
+        readyChan: make(chan *rpc.Call, 1),
+        client: client}
 
     // handle exactly one manager ready reply
     go func() {
@@ -49,12 +56,17 @@ func NewPluginServer(plugin Plugin) (*Server, error) {
             if call.Error != nil {
                 log.Fatal(call.Error)
             }
-            break
+            close(s.readyChan)
         }
-        close(s.readyChan)
     }()
 
     return s, nil
+}
+
+func (x *LoggerPluginServer) Run() error {
+    var r int
+    x.client.Go("LogManager.Ready", ReadyArg{x.Port, x.Name}, &r, x.readyChan)
+    return http.Serve(x.listener, nil)
 }
 
 func getListener() (net.Listener, int, error) {
@@ -65,18 +77,4 @@ func getListener() (net.Listener, int, error) {
         }
     }
     return nil, 0, errors.New("No available control ports.")
-}
-
-type Plugin interface {
-    Start(args *Args, reply *Reply) error
-    Stop(args *Args, reply *Reply) error
-    Restart(args *Args, reply *Reply) error
-}
-
-type Args struct {
-    // TODO
-}
-
-type Reply struct {
-    // TODO
 }
