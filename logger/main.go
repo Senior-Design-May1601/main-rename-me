@@ -9,16 +9,7 @@ import (
 
 type LogWriter struct {
 	client *rpc.Client
-}
-
-func (x *LogWriter) Write(p []byte) (n int, err error) {
-	// TODO: should this be async?
-	var r int
-	e := x.client.Call("LogManager.Log", p, &r)
-	if e != nil {
-		return 0, e
-	}
-	return len(p), nil
+    responseChan chan *rpc.Call
 }
 
 func NewLogger(prefix string, flag int) *log.Logger {
@@ -26,6 +17,26 @@ func NewLogger(prefix string, flag int) *log.Logger {
 	if err != nil {
 		log.Fatal(err)
 	}
-	writer := &LogWriter{client}
+
+	writer := &LogWriter{
+        client: client,
+        responseChan: make(chan *rpc.Call, 100)}
+
+    go writer.handleResponses()
+
 	return log.New(writer, prefix, flag)
+}
+
+func (x *LogWriter) Write(p []byte) (n int, err error) {
+	var r int
+	x.client.Go("LogManager.Log", p, &r, x.responseChan)
+	return len(p), nil
+}
+
+func (x *LogWriter) handleResponses() {
+    for response := range x.responseChan {
+        if response.Error != nil {
+            log.Fatal("Log manager error:", response.Error)
+        }
+    }
 }
