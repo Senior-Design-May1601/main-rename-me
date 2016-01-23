@@ -8,8 +8,8 @@ import (
 )
 
 type LogWriter struct {
-	client *rpc.Client
-    responseChan chan *rpc.Call
+	client       *rpc.Client
+	responseChan chan *rpc.Call
 }
 
 func NewLogger(prefix string, flag int) *log.Logger {
@@ -19,10 +19,10 @@ func NewLogger(prefix string, flag int) *log.Logger {
 	}
 
 	writer := &LogWriter{
-        client: client,
-        responseChan: make(chan *rpc.Call, 100)}
+		client:       client,
+		responseChan: make(chan *rpc.Call, 100)}
 
-    go writer.handleResponses()
+	go writer.handleResponses()
 
 	return log.New(writer, prefix, flag)
 }
@@ -34,9 +34,9 @@ func (x *LogWriter) Write(p []byte) (n int, err error) {
 }
 
 func (x *LogWriter) handleResponses() {
-    for response := range x.responseChan {
-        if response.Error != nil {
-            log.Fatal("Log manager error:", response.Error)
-        }
-    }
+	for response := range x.responseChan {
+		if response.Error != nil {
+			log.Fatal("Log manager error:", response.Error)
+		}
+	}
 }
