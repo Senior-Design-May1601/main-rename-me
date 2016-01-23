@@ -26,11 +26,17 @@ type loggerConfig struct {
     Path string
 }
 
-
 var pluginManager *PluginManager
 var logManager *LogManager
 
 func main() {
+	signalHandler := make(chan os.Signal, 2)
+	signal.Notify(signalHandler,
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGQUIT)
+
     var configPath = flag.String("config", "", "projectmain config file")
     flag.Parse()
 
@@ -45,27 +51,24 @@ func main() {
         log.Fatal(err)
     }
 
+    log.Println("Out of log manager!!")
+
     pluginManager = NewPluginManager(config.PluginConfig)
     err = pluginManager.StartPlugins()
     if err != nil {
         log.Fatal(err)
     }
-    // TODO: make this signal startup less racy? what happens if we get
-    //       a signal after we've started processes, but before we start the
-    //       signal handler? :(
-	signalHandler := make(chan os.Signal, 2)
-	signal.Notify(signalHandler,
-		syscall.SIGHUP,
-		syscall.SIGINT,
-		syscall.SIGTERM,
-		syscall.SIGQUIT)
 
     for signal := range signalHandler {
         if signal == syscall.SIGHUP {
-            pluginManager.RestartPlugins()
+            // TODO
+            pluginManager.StopPlugins()
+            logManager.StopLoggers()
+            os.Exit(0)
         } else {
-            pluginManager.StopPlugins(signal)
-            // TODO: exit with exit status
+            pluginManager.StopPlugins()
+            logManager.StopLoggers()
+            // TODO: exit with useful exit status
             os.Exit(0)
         }
     }

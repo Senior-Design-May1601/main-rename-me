@@ -3,7 +3,6 @@ package loggerplugin
 import (
 	"crypto/rand"
     "crypto/sha256"
-    // TODO: log to our logger instead of system?
     "log"
 )
 

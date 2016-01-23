@@ -1,26 +1,31 @@
 package main
 
 import (
+    "errors"
     "log"
     "net"
     "net/http"
     "net/rpc"
-    "os"
     "strconv"
     "sync"
+    "time"
 
     "github.com/Senior-Design-May1601/projectmain/control"
     "github.com/Senior-Design-May1601/projectmain/loggerplugin"
 )
 
-type ConnectionKey struct {
+const (
+    READY_TIMEOUT = 3 // seconds
+)
+
+type connectionKey struct {
     Port int
     Name string
 }
 
 type loggerConnectionMap struct {
     sync.RWMutex
-    values map[ConnectionKey]*rpc.Client
+    values map[connectionKey]*rpc.Client
 }
 
 type LogManager struct {
@@ -28,9 +33,9 @@ type LogManager struct {
     manager ProcessManager
     loggerConnections loggerConnectionMap
     listener net.Listener
+    readyChan chan int
 }
 
-// TODO: update configs to already have this list
 func NewLogManager(configs []loggerConfig) *LogManager {
     paths := make([]string, len(configs))
     for i, v := range configs {
@@ -41,9 +46,10 @@ func NewLogManager(configs []loggerConfig) *LogManager {
         callChan: make(chan *rpc.Call, 100),
         manager: *NewProcessManager(paths),
         loggerConnections: loggerConnectionMap{
-            values: make(map[ConnectionKey]*rpc.Client),
+            values: make(map[connectionKey]*rpc.Client),
         },
         listener: nil,
+        readyChan: make(chan int, 25),
     }
 
     rpc.Register(&manager)
@@ -62,31 +68,34 @@ func NewLogManager(configs []loggerConfig) *LogManager {
     return &manager
 }
 
-// TODO: timeout and fail if a logger takes too long to get setup
 func (x *LogManager) StartLoggers() error {
     err := x.manager.StartProcesses()
     if err != nil {
         return err
     }
-    // TODO: somehow wait here until all plugins are both ready and connected
 
+    for i := 0; i < x.manager.NumProcs(); i++ {
+        select {
+            case port := <-x.readyChan:
+                log.Println("Logger ready on port", port)
+            case <-time.After(time.Second * READY_TIMEOUT):
+                return errors.New("Logger connection timeout.")
+        }
+    }
     return nil
 }
 
-func (x *LogManager) StopLoggers(signal os.Signal) error {
-    return x.manager.KillProcesses(signal)
+func (x *LogManager) StopLoggers() error {
+    return x.manager.KillProcesses()
 }
 
-// TODO
 func (x *LogManager) RestartLoggers() error {
+    // TODO
     return nil
 }
 
-// called when a logger is ready to actually start logging
 func (x *LogManager) Ready(arg loggerplugin.ReadyArg, _ *int) error {
-    log.Println("Ready() called")
-    go x.connect(ConnectionKey{arg.Port, arg.Name})
-    log.Println("Starting plugin on port", arg.Port)
+    go x.connect(connectionKey{arg.Port, arg.Name})
     return nil
 }
 
@@ -95,15 +104,14 @@ func (x *LogManager) Log(p []byte, _ *int) error {
     x.loggerConnections.RLock()
     var r int
     for key, client := range x.loggerConnections.values {
-        // TODO: handle reply/err
-        client.Go(key.Name + ".Log", p, &r, nil)
+        client.Go(key.Name + ".Log", p, &r, x.callChan)
     }
     x.loggerConnections.RUnlock()
 
     return nil
 }
 
-func (x *LogManager) connect(key ConnectionKey) error {
+func (x *LogManager) connect(key connectionKey) error {
     client, err := rpc.DialHTTP("tcp", "localhost:" + strconv.Itoa(key.Port))
     if err != nil {
         return err
@@ -114,16 +122,15 @@ func (x *LogManager) connect(key ConnectionKey) error {
     x.loggerConnections.Unlock()
     log.Println("Logger started on port", key.Port)
 
+    x.readyChan <- key.Port
+
     return nil
 }
 
 func (x *LogManager) handleCallReplies() {
     for call := range x.callChan {
         if call.Error != nil {
-            log.Fatal("Error from client: ", call.Error)
-        } else {
-            // TODO: log port here
-            log.Println("Logger start: OK.")
+            log.Fatal("Logger error:", call.Error)
         }
     }
 }
