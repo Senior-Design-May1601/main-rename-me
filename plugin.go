@@ -1,27 +1,27 @@
 package main
 
 type PluginManager struct {
-    manager ProcessManager
+	manager ProcessManager
 }
 
 func NewPluginManager(configs []pluginConfig) *PluginManager {
-    paths := make([]string, len(configs))
-    for i, v := range configs {
-        paths[i] = v.Path
-    }
+	paths := make([]string, len(configs))
+	for i, v := range configs {
+		paths[i] = v.Path
+	}
 
-    return &PluginManager{*NewProcessManager(paths)}
+	return &PluginManager{*NewProcessManager(paths)}
 }
 
 func (x *PluginManager) StartPlugins() error {
-    return x.manager.StartProcesses()
+	return x.manager.StartProcesses()
 }
 
 func (x *PluginManager) RestartPlugins() error {
-    // TODO
-    return nil
+	// TODO
+	return nil
 }
 
 func (x *PluginManager) StopPlugins() error {
-    return x.manager.KillProcesses()
+	return x.manager.KillProcesses()
 }
