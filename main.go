@@ -51,8 +51,6 @@ func main() {
         log.Fatal(err)
     }
 
-    log.Println("Out of log manager!!")
-
     pluginManager = NewPluginManager(config.PluginConfig)
     err = pluginManager.StartPlugins()
     if err != nil {

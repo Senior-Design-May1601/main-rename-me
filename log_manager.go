@@ -82,6 +82,9 @@ func (x *LogManager) StartLoggers() error {
                 return errors.New("Logger connection timeout.")
         }
     }
+
+    close(x.readyChan)
+
     return nil
 }
 
@@ -120,7 +123,6 @@ func (x *LogManager) connect(key connectionKey) error {
     x.loggerConnections.Lock()
     x.loggerConnections.values[key] = client
     x.loggerConnections.Unlock()
-    log.Println("Logger started on port", key.Port)
 
     x.readyChan <- key.Port
 
