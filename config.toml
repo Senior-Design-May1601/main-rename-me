@@ -1,7 +1,7 @@
 [[PluginConfig]]
 Name = "plugin"
 Path = "/path/to/plugin"
-Args = ["-config" "/path/to/config-file"]
+Args = ["-config", "/path/to/config-file"]
 
 [[LoggerConfig]]
 Name = "logger"

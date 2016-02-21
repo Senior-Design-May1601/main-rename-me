@@ -5,11 +5,6 @@ type PluginManager struct {
 }
 
 func NewPluginManager(configs []PluginConfig) *PluginManager {
-	//cmds := make([]string, len(configs))
-	//for i, v := range configs {
-	//		cmds[i] = v.Exec
-	//	}
-
 	return &PluginManager{*NewProcessManager(configs)}
 }
 
