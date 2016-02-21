@@ -36,15 +36,10 @@ type LogManager struct {
 	readyChan         chan int
 }
 
-func NewLogManager(configs []loggerConfig) *LogManager {
-	paths := make([]string, len(configs))
-	for i, v := range configs {
-		paths[i] = v.Path
-	}
-
+func NewLogManager(configs []PluginConfig) *LogManager {
 	manager := LogManager{
 		callChan: make(chan *rpc.Call, 100),
-		manager:  *NewProcessManager(paths),
+		manager:  *NewProcessManager(configs),
 		loggerConnections: loggerConnectionMap{
 			values: make(map[connectionKey]*rpc.Client),
 		},
@@ -105,11 +100,11 @@ func (x *LogManager) Ready(arg loggerplugin.ReadyArg, _ *int) error {
 func (x *LogManager) Log(p []byte, _ *int) error {
 	log.Println("Got log event:", string(p))
 	x.loggerConnections.RLock()
+	defer x.loggerConnections.RUnlock()
 	var r int
 	for key, client := range x.loggerConnections.values {
 		client.Go(key.Name+".Log", p, &r, x.callChan)
 	}
-	x.loggerConnections.RUnlock()
 
 	return nil
 }

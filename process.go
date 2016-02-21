@@ -20,12 +20,12 @@ type ProcessManager struct {
 	processes processList
 }
 
-func NewProcessManager(paths []string) *ProcessManager {
+func NewProcessManager(cmds []PluginConfig) *ProcessManager {
 	p := ProcessManager{}
 	p.processes.Lock()
 	defer p.processes.Unlock()
-	for _, path := range paths {
-		pi := &processInfo{exec.Command(path)}
+	for _, cmd := range cmds {
+		pi := &processInfo{exec.Command(cmd.GetPath(), cmd.GetArgs()...)}
 		pi.cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 		// TODO: chroot here too
 		p.processes.values = append(p.processes.values, pi)

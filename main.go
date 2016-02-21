@@ -15,15 +15,46 @@ type Config struct {
 	LoggerConfig []loggerConfig
 }
 
-// TODO: support plugin arguments
+type PluginConfig interface {
+	GetName() string
+	GetPath() string
+	GetArgs() []string
+}
+
 type pluginConfig struct {
 	Name string
 	Path string
+	Args []string
 }
 
 type loggerConfig struct {
 	Name string
 	Path string
+	Args []string
+}
+
+func (x *pluginConfig) GetName() string {
+	return x.Name
+}
+
+func (x *pluginConfig) GetPath() string {
+	return x.Path
+}
+
+func (x *pluginConfig) GetArgs() []string {
+	return x.Args
+}
+
+func (x *loggerConfig) GetName() string {
+	return x.Name
+}
+
+func (x *loggerConfig) GetPath() string {
+	return x.Path
+}
+
+func (x *loggerConfig) GetArgs() []string {
+	return x.Args
 }
 
 var pluginManager *PluginManager
@@ -45,13 +76,25 @@ func main() {
 		log.Fatal(err)
 	}
 
-	logManager = NewLogManager(config.LoggerConfig)
+	// this is messy...done for easier toml parsing
+	// there's almost certainly a better way to do this
+	loggerConfigs := make([]PluginConfig, len(config.LoggerConfig))
+	for i := range config.LoggerConfig {
+		loggerConfigs[i] = &config.LoggerConfig[i]
+	}
+
+	pluginConfigs := make([]PluginConfig, len(config.PluginConfig))
+	for i := range config.PluginConfig {
+		pluginConfigs[i] = &config.PluginConfig[i]
+	}
+
+	logManager = NewLogManager(loggerConfigs)
 	err := logManager.StartLoggers()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	pluginManager = NewPluginManager(config.PluginConfig)
+	pluginManager = NewPluginManager(pluginConfigs)
 	err = pluginManager.StartPlugins()
 	if err != nil {
 		log.Fatal(err)

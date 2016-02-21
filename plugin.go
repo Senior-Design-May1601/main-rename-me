@@ -4,13 +4,13 @@ type PluginManager struct {
 	manager ProcessManager
 }
 
-func NewPluginManager(configs []pluginConfig) *PluginManager {
-	paths := make([]string, len(configs))
-	for i, v := range configs {
-		paths[i] = v.Path
-	}
+func NewPluginManager(configs []PluginConfig) *PluginManager {
+	//cmds := make([]string, len(configs))
+	//for i, v := range configs {
+	//		cmds[i] = v.Exec
+	//	}
 
-	return &PluginManager{*NewProcessManager(paths)}
+	return &PluginManager{*NewProcessManager(configs)}
 }
 
 func (x *PluginManager) StartPlugins() error {
