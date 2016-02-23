@@ -87,11 +87,6 @@ func (x *LogManager) StopLoggers() error {
 	return x.manager.KillProcesses()
 }
 
-func (x *LogManager) RestartLoggers() error {
-	// TODO
-	return nil
-}
-
 func (x *LogManager) Ready(arg loggerplugin.ReadyArg, _ *int) error {
 	go x.connect(connectionKey{arg.Port, arg.Name})
 	return nil

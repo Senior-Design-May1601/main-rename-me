@@ -64,14 +64,6 @@ func (x *ProcessManager) MonitorProcess(idx int, pi *processInfo) {
 	}
 }
 
-func (x *ProcessManager) RestartProcesses() error {
-	// TODO
-	//  - send kill (hup?) signal
-	//  - wait for processes to exit
-	//  - restart processes
-	return nil
-}
-
 func (x *ProcessManager) KillProcesses() error {
 	x.processes.Lock()
 	defer x.processes.Unlock()

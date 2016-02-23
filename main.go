@@ -131,16 +131,18 @@ func main() {
 	}
 
 	for signal := range signalHandler {
-		if signal == syscall.SIGHUP {
-			// TODO
-			pluginManager.StopPlugins()
-			logManager.StopLoggers()
-			os.Exit(0)
-		} else {
-			log.Println("Received shutdown signal. Stopping processes.")
-			pluginManager.StopPlugins()
-			logManager.StopLoggers()
-			os.Exit(0)
-		}
-	}
+        log.Println(signal, "received. Shutting down.")
+
+        err = pluginManager.StopPlugins()
+        if err != nil {
+            log.Println("Error stopping plugins:", err)
+        }
+
+        err = logManager.StopLoggers()
+        if err != nil {
+            log.Println("Error stopping plugins:", err)
+        }
+
+        os.Exit(0)
+    }
 }
