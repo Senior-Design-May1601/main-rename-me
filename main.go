@@ -77,7 +77,7 @@ func errExit(reason string) {
 	}
 
 	if logManager != nil {
-		err = logManager.StopLoggers()
+		err := logManager.StopLoggers()
 		if err != nil {
 			log.Println("Error stopping loggers:", err)
 		}
