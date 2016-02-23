@@ -57,9 +57,9 @@ func (x *ProcessManager) MonitorProcess(idx int, pi *processInfo) {
 	err := pi.cmd.Wait()
 	if err != nil {
 		// TODO: don't do anything if *we* killed the process
-        x.processes.Lock()
-        delete(x.processes.values, idx)
-        x.processes.Unlock()
+		x.processes.Lock()
+		delete(x.processes.values, idx)
+		x.processes.Unlock()
 		errExit(err.Error())
 	}
 }

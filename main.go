@@ -11,7 +11,7 @@ import (
 )
 
 type Config struct {
-    MasterConfig masterConfig
+	MasterConfig masterConfig
 	PluginConfig []pluginConfig
 	LoggerConfig []loggerConfig
 }
@@ -23,7 +23,7 @@ type PluginConfig interface {
 }
 
 type masterConfig struct {
-    Logfile string
+	Logfile string
 }
 
 type pluginConfig struct {
@@ -67,17 +67,17 @@ var logManager *LogManager
 var logfile *os.File
 
 func errExit(reason string) {
-    log.Println("Fatal error:", reason)
-    err := pluginManager.StopPlugins()
-    if err != nil {
-        log.Println("Error stopping plugins:", err)
-    }
-    err = logManager.StopLoggers()
-    if err != nil {
-        log.Println("Error stopping loggers:", err)
-    }
-    logfile.Close()
-    os.Exit(1)
+	log.Println("Fatal error:", reason)
+	err := pluginManager.StopPlugins()
+	if err != nil {
+		log.Println("Error stopping plugins:", err)
+	}
+	err = logManager.StopLoggers()
+	if err != nil {
+		log.Println("Error stopping loggers:", err)
+	}
+	logfile.Close()
+	os.Exit(1)
 }
 
 func main() {
@@ -96,15 +96,15 @@ func main() {
 		errExit(err.Error())
 	}
 
-    // our internal logfile
-    logfile, err := os.OpenFile(config.MasterConfig.Logfile,
-        os.O_RDWR | os.O_CREATE | os.O_APPEND,
-        0644)
-    if err != nil {
-        errExit(err.Error())
-    }
-    defer logfile.Close()
-    log.SetOutput(logfile)
+	// our internal logfile
+	logfile, err := os.OpenFile(config.MasterConfig.Logfile,
+		os.O_RDWR|os.O_CREATE|os.O_APPEND,
+		0644)
+	if err != nil {
+		errExit(err.Error())
+	}
+	defer logfile.Close()
+	log.SetOutput(logfile)
 
 	// this is messy...done for easier toml parsing
 	// there's almost certainly a better way to do this
@@ -137,7 +137,7 @@ func main() {
 			logManager.StopLoggers()
 			os.Exit(0)
 		} else {
-            log.Println("Received shutdown signal. Stopping processes.")
+			log.Println("Received shutdown signal. Stopping processes.")
 			pluginManager.StopPlugins()
 			logManager.StopLoggers()
 			os.Exit(0)
