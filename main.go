@@ -68,14 +68,21 @@ var logfile *os.File
 
 func errExit(reason string) {
 	log.Println("Fatal error:", reason)
-	err := pluginManager.StopPlugins()
-	if err != nil {
-		log.Println("Error stopping plugins:", err)
+
+	if pluginManager != nil {
+		err := pluginManager.StopPlugins()
+		if err != nil {
+			log.Println("Error stopping plugins:", err)
+		}
 	}
-	err = logManager.StopLoggers()
-	if err != nil {
-		log.Println("Error stopping loggers:", err)
+
+	if logManager != nil {
+		err = logManager.StopLoggers()
+		if err != nil {
+			log.Println("Error stopping loggers:", err)
+		}
 	}
+
 	logfile.Close()
 	os.Exit(1)
 }
@@ -131,18 +138,18 @@ func main() {
 	}
 
 	for signal := range signalHandler {
-        log.Println(signal, "received. Shutting down.")
+		log.Println(signal, "received. Shutting down.")
 
-        err = pluginManager.StopPlugins()
-        if err != nil {
-            log.Println("Error stopping plugins:", err)
-        }
+		err = pluginManager.StopPlugins()
+		if err != nil {
+			log.Println("Error stopping plugins:", err)
+		}
 
-        err = logManager.StopLoggers()
-        if err != nil {
-            log.Println("Error stopping plugins:", err)
-        }
+		err = logManager.StopLoggers()
+		if err != nil {
+			log.Println("Error stopping plugins:", err)
+		}
 
-        os.Exit(0)
-    }
+		os.Exit(0)
+	}
 }
