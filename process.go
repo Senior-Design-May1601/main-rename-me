@@ -68,11 +68,15 @@ func (x *ProcessManager) KillProcesses() error {
 	x.processes.Lock()
 	defer x.processes.Unlock()
 	for _, pi := range x.processes.values {
-		pgid, err := syscall.Getpgid(pi.cmd.Process.Pid)
-		if err != nil {
-			return err
+		// we could potentially fail before the processes are correctly started
+		// in that case, do nothing
+		if pi.cmd.Process != nil {
+			pgid, err := syscall.Getpgid(pi.cmd.Process.Pid)
+			if err != nil {
+				return err
+			}
+			syscall.Kill(-pgid, 15)
 		}
-		syscall.Kill(-pgid, 15)
 	}
 	return nil
 }

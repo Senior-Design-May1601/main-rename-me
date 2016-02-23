@@ -100,7 +100,7 @@ func main() {
 
 	var config Config
 	if _, err := toml.DecodeFile(*configPath, &config); err != nil {
-		errExit(err.Error())
+		log.Fatal("Failed to read config file:", err)
 	}
 
 	// our internal logfile
@@ -108,7 +108,7 @@ func main() {
 		os.O_RDWR|os.O_CREATE|os.O_APPEND,
 		0644)
 	if err != nil {
-		errExit(err.Error())
+		log.Fatal("Failed to create log file:", err)
 	}
 	defer logfile.Close()
 	log.SetOutput(logfile)
