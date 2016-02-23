@@ -1,3 +1,6 @@
+[MasterConfig]
+Logfile = "/path/to/log/file"
+
 [[PluginConfig]]
 Name = "plugin"
 Path = "/path/to/plugin"

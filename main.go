@@ -11,6 +11,7 @@ import (
 )
 
 type Config struct {
+    MasterConfig masterConfig
 	PluginConfig []pluginConfig
 	LoggerConfig []loggerConfig
 }
@@ -19,6 +20,10 @@ type PluginConfig interface {
 	GetName() string
 	GetPath() string
 	GetArgs() []string
+}
+
+type masterConfig struct {
+    Logfile string
 }
 
 type pluginConfig struct {
@@ -76,6 +81,16 @@ func main() {
 		log.Fatal(err)
 	}
 
+    // our internal logfile
+    f, err := os.OpenFile(config.MasterConfig.Logfile,
+        os.O_RDWR | os.O_CREATE | os.O_APPEND,
+        0644)
+    if err != nil {
+        log.Fatal("error opening file:", err)
+    }
+    defer f.Close()
+    log.SetOutput(f)
+
 	// this is messy...done for easier toml parsing
 	// there's almost certainly a better way to do this
 	loggerConfigs := make([]PluginConfig, len(config.LoggerConfig))
@@ -89,7 +104,7 @@ func main() {
 	}
 
 	logManager = NewLogManager(loggerConfigs)
-	err := logManager.StartLoggers()
+	err = logManager.StartLoggers()
 	if err != nil {
 		log.Fatal(err)
 	}
