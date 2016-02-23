@@ -51,7 +51,7 @@ func NewLogManager(configs []PluginConfig) *LogManager {
 	rpc.HandleHTTP()
 	l, e := net.Listen("tcp", control.CONTROL_PORT_CORE)
 	if e != nil {
-		log.Fatal("listen error:", e)
+		errExit(e.Error())
 	}
 
 	manager.listener = l
@@ -127,7 +127,7 @@ func (x *LogManager) connect(key connectionKey) error {
 func (x *LogManager) handleCallReplies() {
 	for call := range x.callChan {
 		if call.Error != nil {
-			log.Fatal("Logger error:", call.Error)
+			errExit(call.Error.Error())
 		}
 	}
 }

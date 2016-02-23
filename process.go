@@ -11,24 +11,24 @@ type processInfo struct {
 	cmd *exec.Cmd
 }
 
-type processList struct {
+type processMap struct {
 	sync.RWMutex
-	values []*processInfo
+	values map[int]*processInfo
 }
 
 type ProcessManager struct {
-	processes processList
+	processes processMap
 }
 
 func NewProcessManager(cmds []PluginConfig) *ProcessManager {
-	p := ProcessManager{}
+	p := ProcessManager{processes: processMap{values: make(map[int]*processInfo)}}
 	p.processes.Lock()
 	defer p.processes.Unlock()
-	for _, cmd := range cmds {
+	for idx, cmd := range cmds {
 		pi := &processInfo{exec.Command(cmd.GetPath(), cmd.GetArgs()...)}
 		pi.cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 		// TODO: chroot here too
-		p.processes.values = append(p.processes.values, pi)
+		p.processes.values[idx] = pi
 	}
 
 	return &p
@@ -43,25 +43,24 @@ func (x *ProcessManager) NumProcs() int {
 func (x *ProcessManager) StartProcesses() error {
 	x.processes.RLock()
 	defer x.processes.RUnlock()
-	for _, pi := range x.processes.values {
+	for idx, pi := range x.processes.values {
 		if err := pi.cmd.Start(); err != nil {
 			return err
 		}
-		go x.MonitorProcess(pi)
+		go x.MonitorProcess(idx, pi)
 		log.Println("Started process:", pi.cmd.Path)
 	}
 	return nil
 }
 
-func (x *ProcessManager) MonitorProcess(pi *processInfo) {
+func (x *ProcessManager) MonitorProcess(idx int, pi *processInfo) {
 	err := pi.cmd.Wait()
 	if err != nil {
-		// TODO:
-		//  - remove process from map
-		//  - kill all other processes
-		//  - die
-		//  - don't do anything if *we* killed the process
-		log.Fatal("Process crashed:", err)
+		// TODO: don't do anything if *we* killed the process
+        x.processes.Lock()
+        delete(x.processes.values, idx)
+        x.processes.Unlock()
+		errExit(err.Error())
 	}
 }
 

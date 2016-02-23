@@ -64,6 +64,21 @@ func (x *loggerConfig) GetArgs() []string {
 
 var pluginManager *PluginManager
 var logManager *LogManager
+var logfile *os.File
+
+func errExit(reason string) {
+    log.Println("Fatal error:", reason)
+    err := pluginManager.StopPlugins()
+    if err != nil {
+        log.Println("Error stopping plugins:", err)
+    }
+    err = logManager.StopLoggers()
+    if err != nil {
+        log.Println("Error stopping loggers:", err)
+    }
+    logfile.Close()
+    os.Exit(1)
+}
 
 func main() {
 	signalHandler := make(chan os.Signal, 2)
@@ -78,18 +93,18 @@ func main() {
 
 	var config Config
 	if _, err := toml.DecodeFile(*configPath, &config); err != nil {
-		log.Fatal(err)
+		errExit(err.Error())
 	}
 
     // our internal logfile
-    f, err := os.OpenFile(config.MasterConfig.Logfile,
+    logfile, err := os.OpenFile(config.MasterConfig.Logfile,
         os.O_RDWR | os.O_CREATE | os.O_APPEND,
         0644)
     if err != nil {
-        log.Fatal("error opening file:", err)
+        errExit(err.Error())
     }
-    defer f.Close()
-    log.SetOutput(f)
+    defer logfile.Close()
+    log.SetOutput(logfile)
 
 	// this is messy...done for easier toml parsing
 	// there's almost certainly a better way to do this
@@ -106,13 +121,13 @@ func main() {
 	logManager = NewLogManager(loggerConfigs)
 	err = logManager.StartLoggers()
 	if err != nil {
-		log.Fatal(err)
+		errExit(err.Error())
 	}
 
 	pluginManager = NewPluginManager(pluginConfigs)
 	err = pluginManager.StartPlugins()
 	if err != nil {
-		log.Fatal(err)
+		errExit(err.Error())
 	}
 
 	for signal := range signalHandler {
