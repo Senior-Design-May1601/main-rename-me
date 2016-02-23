@@ -137,9 +137,9 @@ func main() {
 			logManager.StopLoggers()
 			os.Exit(0)
 		} else {
+            log.Println("Received shutdown signal. Stopping processes.")
 			pluginManager.StopPlugins()
 			logManager.StopLoggers()
-			// TODO: exit with useful exit status
 			os.Exit(0)
 		}
 	}
